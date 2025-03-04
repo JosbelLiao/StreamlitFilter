@@ -99,6 +99,16 @@ filtered_doctors = filtered_doctors.merge(doctor_specialties, on='doctor_id', ho
 filtered_doctors = filtered_doctors.merge(schedule, on='doctor_id', how='left')
 filtered_doctors = filtered_doctors.merge(specialties, on='specialty_id', how='left', suffixes=('', '_specialty'))
 
+# Filter merged results based on the selected filters
+if specialty_filter:
+    filtered_doctors = filtered_doctors[filtered_doctors['name_specialty'].isin(specialty_filter)]
+
+if location_filter:
+    filtered_doctors = filtered_doctors[filtered_doctors['location'].isin(location_filter)]
+
+if day_filter:
+    filtered_doctors = filtered_doctors[filtered_doctors['day_of_week'].isin(day_filter)]
+
 # Display the table with additional details
 st.write("### Available Doctors:")
 st.dataframe(filtered_doctors[['name', 'location', 'day_of_week', 'name_specialty']])
