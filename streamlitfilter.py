@@ -64,6 +64,7 @@ st.title("Doctor Filter App")
 # Filters
 doctor_filter = st.selectbox("Select Doctor", ["All"] + doctors['name'].tolist())
 specialty_filter = st.selectbox("Select Specialty", ["All"] + specialties['name'].tolist())
+location_filter = st.selectbox("Select Location", ["All"] + schedule['location'].unique().tolist())
 day_filter = st.selectbox("Select Day", ["All"] + schedule['day_of_week'].unique().tolist())
 age_filter = st.number_input("Enter Patient Age", min_value=0, max_value=100, value=30)
 
@@ -84,6 +85,10 @@ if specialty_filter != "All":
         st.warning(f"This specialty is only available for ages {min_age} to {max_age}.")
     
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(doctor_specialties_filtered['doctor_id'])]
+
+if location_filter != "All":
+    valid_doctors = schedule[schedule['location'] == location_filter]['doctor_id'].tolist()
+    filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(valid_doctors)]
 
 if day_filter != "All":
     valid_doctors = schedule[schedule['day_of_week'] == day_filter]['doctor_id'].tolist()
@@ -140,5 +145,43 @@ with st.sidebar.form("assign_schedule"):
                      (selected_doctor, location, day_of_week))
         conn.commit()
         st.success("Schedule assigned successfully")
+
+# Update Doctor Information
+with st.sidebar.form("update_doctor"):
+    st.subheader("Update Doctor")
+    update_doctor_id = st.selectbox("Select Doctor to Update", doctors['doctor_id'].tolist())
+    selected_specialty = st.selectbox("Select Specialty to Update", specialties['specialty_id'].tolist(), key="update_specialty")
+    new_name = st.text_input("New Doctor Name")
+    new_day_of_week = st.selectbox("Select Day of the Week to Update", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], key="update_day_of_week")
+    new_location = st.text_input("New Location")
+    new_min_age = st.number_input("New Min Age", min_value=0, max_value=100, value=0)
+    new_max_age = st.number_input("New Max Age", min_value=0, max_value=100, value=100)
+    if st.form_submit_button("Update Doctor"):
+        # Update doctor's name (if necessary)
+        if new_name:
+            conn.execute('''
+                UPDATE doctors
+                SET name = ?
+                WHERE doctor_id = ?
+            ''', (new_name, update_doctor_id))
+
+        # Update age restrictions for the specific specialty (if necessary)
+        if new_min_age is not None and new_max_age is not None:
+            conn.execute('''
+                UPDATE doctor_specialties
+                SET min_age = ?, max_age = ?
+                WHERE doctor_id = ? AND specialty_id = ?
+            ''', (new_min_age, new_max_age, update_doctor_id, selected_specialty))
+
+        # Update doctor's location for the specific day (if necessary)
+        if new_location:
+            conn.execute('''
+                UPDATE doctor_schedule
+                SET location = ?
+                WHERE doctor_id = ? AND day_of_week = ?
+            ''', (new_location, update_doctor_id, new_day_of_week))
+
+        conn.commit()
+        st.success("Doctor updated successfully")
 
 conn.close()
