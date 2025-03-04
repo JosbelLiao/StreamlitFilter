@@ -200,20 +200,28 @@ with st.sidebar.form("update_doctor"):
         conn.commit()
         st.success("Doctor updated successfully")
 
-        # Remove Specialty from Doctor
-        with st.sidebar.form("remove_specialty"):
-            st.subheader("Remove Specialty from Doctor")
-            selected_doctor_specialty = st.selectbox("Select Doctor to Remove Specialty From", doctors['doctor_id'].tolist())
-            selected_specialty_remove = st.selectbox("Select Specialty to Remove", specialties['specialty_id'].tolist(), key="remove_specialty")
-            if st.form_submit_button("Remove Specialty"):
-                st.write("Removing specialty...")
-                try:
-                    conn.execute("DELETE FROM doctor_specialties WHERE doctor_id = ? AND specialty_id = ?", 
-                                 (selected_doctor_specialty, selected_specialty_remove))
-                    conn.commit()
-                    st.success("Specialty removed successfully")
-                except Exception as e:
-                    st.error(f"Error: {e}")
+# Remove Specialty from Doctor
+with st.sidebar.form("remove_specialty"):
+    st.subheader("Remove Specialty from Doctor")
+    selected_doctor_specialty = st.selectbox("Select Doctor to Remove Specialty From", doctors['doctor_id'].tolist())
+    selected_specialty_remove = st.selectbox("Select Specialty to Remove", specialties['specialty_id'].tolist(), key="remove_specialty")
+    if st.form_submit_button("Remove Specialty"):
+        conn.execute("DELETE FROM doctor_specialties WHERE doctor_id = ? AND specialty_id = ?", 
+                     (selected_doctor_specialty, selected_specialty_remove))
+        conn.commit()
+        st.success("Specialty removed successfully")
+
+# Remove Day from Doctor's Schedule
+with st.sidebar.form("remove_day"):
+    st.subheader("Remove Day from Doctor's Schedule")
+    selected_doctor_day = st.selectbox("Select Doctor to Remove Day From", doctors['doctor_id'].tolist(), key="remove_day_doctor")
+    selected_day_remove = st.selectbox("Select Day to Remove from Schedule", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], key="remove_day_schedule")
+    if st.form_submit_button("Remove Day"):
+        conn.execute("DELETE FROM doctor_schedule WHERE doctor_id = ? AND day_of_week = ?", 
+                     (selected_doctor_day, selected_day_remove))
+        conn.commit()
+        st.success("Day removed successfully")
+
 
 
 conn.close()
