@@ -98,12 +98,17 @@ if day_filter:
 filtered_schedule = schedule[schedule['doctor_id'].isin(filtered_doctors['doctor_id'])]
 filtered_specialties = doctor_specialties[doctor_specialties['doctor_id'].isin(filtered_doctors['doctor_id'])]
 
-filtered_data = pd.merge(filtered_doctors, filtered_schedule, on='doctor_id')
-filtered_data = pd.merge(filtered_data, filtered_specialties, on='doctor_id')
-filtered_data = pd.merge(filtered_data, specialties, left_on='specialty_id', right_on='specialty_id', suffixes=('_doc', '_spec'))
+# Merge dataframes
+merged_data = filtered_doctors.merge(filtered_schedule, on='doctor_id')
+merged_data = merged_data.merge(filtered_specialties, on='doctor_id')
+merged_data = merged_data.merge(specialties, left_on='specialty_id', right_on='specialty_id', suffixes=('_doc', '_spec'))
+
+# Select relevant columns to display
+filtered_data = merged_data[['doctor_id', 'name_doc', 'day_of_week', 'location', 'name_spec']]
+filtered_data = filtered_data.rename(columns={'name_doc': 'Name', 'name_spec': 'Specialty'})
 
 st.write("### Available Doctors:")
-st.dataframe(filtered_data[['doctor_id', 'name_doc', 'day_of_week', 'location', 'name_spec']].rename(columns={'name_doc': 'Name', 'name_spec': 'Specialty'}))
+st.dataframe(filtered_data)
 
 # Data Entry Forms
 st.sidebar.title("Manage Database")
@@ -193,4 +198,3 @@ with st.sidebar.form("update_doctor"):
         st.success("Doctor updated successfully")
 
 conn.close()
-
