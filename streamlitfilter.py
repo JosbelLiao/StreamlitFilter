@@ -140,12 +140,12 @@ with st.sidebar.form("add_specialty"):
 # Assign Doctor to Specialty with Age Restrictions
 with st.sidebar.form("assign_specialty"):
     st.subheader("Assign Specialty to Doctor")
-    selected_doctor = st.selectbox("Select Doctor", doctors['doctor_id'].tolist())
-    selected_specialty = st.selectbox("Select Specialty", specialties['specialty_id'].tolist())
+    selected_doctor = st.selectbox("Select Doctor", doctors.set_index('doctor_id')['name'].to_dict())
+    selected_specialty = st.selectbox("Select Specialty", specialties.set_index('specialty_id')['name'].to_dict())
     min_age = st.number_input("Min Age", min_value=0, max_value=100, value=0)
     max_age = st.number_input("Max Age", min_value=0, max_value=100, value=100)
     if st.form_submit_button("Assign Specialty"):
-        conn.execute("INSERT INTO doctor_specialties (doctor_id, specialty_id, min_age, max_age) VALUES (?, ?, ?, ?)", 
+        conn.execute("INSERT INTO doctor_specialties (doctor_id, specialty_id, min_age, max_age) VALUES (?, ?, ?, ?)",
                      (selected_doctor, selected_specialty, min_age, max_age))
         conn.commit()
         st.success("Specialty assigned successfully")
@@ -153,11 +153,11 @@ with st.sidebar.form("assign_specialty"):
 # Assign Doctor to Schedule
 with st.sidebar.form("assign_schedule"):
     st.subheader("Assign Doctor Schedule")
-    selected_doctor = st.selectbox("Select Doctor for Schedule", doctors['doctor_id'].tolist(), key="schedule_doctor")
+    selected_doctor = st.selectbox("Select Doctor for Schedule", doctors.set_index('doctor_id')['name'].to_dict(), key="schedule_doctor")
     location = st.text_input("Location")
     day_of_week = st.selectbox("Day of the Week", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
     if st.form_submit_button("Assign Schedule"):
-        conn.execute("INSERT INTO doctor_schedule (doctor_id, location, day_of_week) VALUES (?, ?, ?)", 
+        conn.execute("INSERT INTO doctor_schedule (doctor_id, location, day_of_week) VALUES (?, ?, ?)",
                      (selected_doctor, location, day_of_week))
         conn.commit()
         st.success("Schedule assigned successfully")
@@ -165,8 +165,8 @@ with st.sidebar.form("assign_schedule"):
 # Update Doctor Information
 with st.sidebar.form("update_doctor"):
     st.subheader("Update Doctor")
-    update_doctor_id = st.selectbox("Select Doctor to Update", doctors['doctor_id'].tolist())
-    selected_specialty = st.selectbox("Select Specialty to Update", specialties['specialty_id'].tolist(), key="update_specialty")
+    update_doctor_id = st.selectbox("Select Doctor to Update", doctors.set_index('doctor_id')['name'].to_dict())
+    selected_specialty = st.selectbox("Select Specialty to Update", specialties.set_index('specialty_id')['name'].to_dict(), key="update_specialty")
     new_name = st.text_input("New Doctor Name")
     new_day_of_week = st.selectbox("Select Day of the Week to Update", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], key="update_day_of_week")
     new_location = st.text_input("New Location")
