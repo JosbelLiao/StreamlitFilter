@@ -62,40 +62,48 @@ doctors, specialties, doctor_specialties, schedule = load_data()
 st.title("Doctor Filter App")
 
 # Filters
-doctor_filter = st.selectbox("Select Doctor", ["All"] + doctors['name'].tolist())
-specialty_filter = st.selectbox("Select Specialty", ["All"] + specialties['name'].tolist())
-location_filter = st.selectbox("Select Location", ["All"] + schedule['location'].unique().tolist())
-day_filter = st.selectbox("Select Day", ["All"] + schedule['day_of_week'].unique().tolist())
+doctor_filter = st.multiselect("Select Doctor(s)", doctors['name'].tolist())
+specialty_filter = st.multiselect("Select Specialty(ies)", specialties['name'].tolist())
+location_filter = st.multiselect("Select Location(s)", schedule['location'].unique().tolist())
+day_filter = st.multiselect("Select Day(s)", schedule['day_of_week'].unique().tolist())
 age_filter = st.number_input("Enter Patient Age", min_value=0, max_value=100, value=30)
 
 # Filter logic
 filtered_doctors = doctors.copy()
 
-if doctor_filter != "All":
-    filtered_doctors = filtered_doctors[filtered_doctors['name'] == doctor_filter]
+if doctor_filter:
+    filtered_doctors = filtered_doctors[filtered_doctors['name'].isin(doctor_filter)]
 
-if specialty_filter != "All":
-    doctor_specialties_filtered = doctor_specialties[doctor_specialties['specialty_id'] == 
-        specialties[specialties['name'] == specialty_filter]['specialty_id'].values[0]]
+if specialty_filter:
+    filtered_specialties = specialties[specialties['name'].isin(specialty_filter)]
+    doctor_specialties_filtered = doctor_specialties[doctor_specialties['specialty_id'].isin(filtered_specialties['specialty_id'])]
     
     min_age = doctor_specialties_filtered['min_age'].min()
     max_age = doctor_specialties_filtered['max_age'].max()
     
     if not (min_age <= age_filter <= max_age):
-        st.warning(f"This specialty is only available for ages {min_age} to {max_age}.")
+        st.warning(f"Selected specialties are only available for ages {min_age} to {max_age}.")
     
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(doctor_specialties_filtered['doctor_id'])]
 
-if location_filter != "All":
-    valid_doctors = schedule[schedule['location'] == location_filter]['doctor_id'].tolist()
+if location_filter:
+    valid_doctors = schedule[schedule['location'].isin(location_filter)]['doctor_id'].tolist()
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(valid_doctors)]
 
-if day_filter != "All":
-    valid_doctors = schedule[schedule['day_of_week'] == day_filter]['doctor_id'].tolist()
+if day_filter:
+    valid_doctors = schedule[schedule['day_of_week'].isin(day_filter)]['doctor_id'].tolist()
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(valid_doctors)]
+
+# Join filtered data with schedule and specialties to display additional info
+filtered_schedule = schedule[schedule['doctor_id'].isin(filtered_doctors['doctor_id'])]
+filtered_specialties = doctor_specialties[doctor_specialties['doctor_id'].isin(filtered_doctors['doctor_id'])]
+
+filtered_data = pd.merge(filtered_doctors, filtered_schedule, on='doctor_id')
+filtered_data = pd.merge(filtered_data, filtered_specialties, on='doctor_id')
+filtered_data = pd.merge(filtered_data, specialties, left_on='specialty_id', right_on='specialty_id', suffixes=('_doc', '_spec'))
 
 st.write("### Available Doctors:")
-st.dataframe(filtered_doctors)
+st.dataframe(filtered_data[['doctor_id', 'name_doc', 'day_of_week', 'location', 'name_spec']].rename(columns={'name_doc': 'Name', 'name_spec': 'Specialty'}))
 
 # Data Entry Forms
 st.sidebar.title("Manage Database")
@@ -185,3 +193,4 @@ with st.sidebar.form("update_doctor"):
         st.success("Doctor updated successfully")
 
 conn.close()
+
