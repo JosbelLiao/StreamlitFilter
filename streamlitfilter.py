@@ -1,10 +1,19 @@
 import streamlit as st
-import sqlite3
 import pandas as pd
+import psycopg2
+from psycopg2 import sql
+from dotenv import load_dotenv
+import os
 
-# Database connection
+# Cargar variables de entorno
+load_dotenv()
+
+# Obtener la URL de la base de datos desde las variables de entorno
+database_url = os.getenv("DATABASE_URL")
+
+# Función para obtener la conexión a la base de datos
 def get_connection():
-    conn = sqlite3.connect("doctors.db")
+    conn = psycopg2.connect(database_url)
     return conn
 
 # Create tables if they don't exist
@@ -112,6 +121,7 @@ if day_filter:
 # Display the table with additional details
 st.write("### Available Doctors:")
 st.dataframe(filtered_doctors[['name', 'location', 'day_of_week', 'name_specialty']])
+st.dataframe(filtered_doctors[['name', 'location', 'day_of_week', 'name_specialty']])
 
 # Data Entry Forms
 st.sidebar.title("Manage Database")
@@ -140,12 +150,12 @@ with st.sidebar.form("add_specialty"):
 # Assign Doctor to Specialty with Age Restrictions
 with st.sidebar.form("assign_specialty"):
     st.subheader("Assign Specialty to Doctor")
-    selected_doctor = st.selectbox("Select Doctor", doctors.set_index('doctor_id')['name'].to_dict())
-    selected_specialty = st.selectbox("Select Specialty", specialties.set_index('specialty_id')['name'].to_dict())
+    selected_doctor = st.selectbox("Select Doctor", doctors['doctor_id'].tolist())
+    selected_specialty = st.selectbox("Select Specialty", specialties['specialty_id'].tolist())
     min_age = st.number_input("Min Age", min_value=0, max_value=100, value=0)
     max_age = st.number_input("Max Age", min_value=0, max_value=100, value=100)
     if st.form_submit_button("Assign Specialty"):
-        conn.execute("INSERT INTO doctor_specialties (doctor_id, specialty_id, min_age, max_age) VALUES (?, ?, ?, ?)",
+        conn.execute("INSERT INTO doctor_specialties (doctor_id, specialty_id, min_age, max_age) VALUES (?, ?, ?, ?)", 
                      (selected_doctor, selected_specialty, min_age, max_age))
         conn.commit()
         st.success("Specialty assigned successfully")
@@ -157,7 +167,7 @@ with st.sidebar.form("assign_schedule"):
     location = st.text_input("Location")
     day_of_week = st.selectbox("Day of the Week", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
     if st.form_submit_button("Assign Schedule"):
-        conn.execute("INSERT INTO doctor_schedule (doctor_id, location, day_of_week) VALUES (?, ?, ?)",
+        conn.execute("INSERT INTO doctor_schedule (doctor_id, location, day_of_week) VALUES (?, ?, ?)", 
                      (selected_doctor, location, day_of_week))
         conn.commit()
         st.success("Schedule assigned successfully")
