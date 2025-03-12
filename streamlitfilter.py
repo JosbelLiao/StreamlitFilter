@@ -73,6 +73,11 @@ def load_data():
     doctor_specialties = pd.read_sql("SELECT * FROM doctor_specialties", conn)
     schedule = pd.read_sql("SELECT * FROM doctor_schedule", conn)
     conn.close()
+
+    # Handle None values for min_age and max_age
+    doctor_specialties['min_age'].fillna(0, inplace=True)
+    doctor_specialties['max_age'].fillna(150, inplace=True)
+
     return doctors, specialties, doctor_specialties, schedule
 
 doctors, specialties, doctor_specialties, schedule = load_data()
@@ -100,8 +105,15 @@ if specialty_filter:
     min_age = doctor_specialties_filtered['min_age'].min()
     max_age = doctor_specialties_filtered['max_age'].max()
     
-    if not (min_age <= age_filter <= max_age):
-        st.warning(f"This specialty is only available for ages {min_age} to {max_age}.")
+    if min_age is not None and max_age is not None:
+        if not (min_age <= age_filter <= max_age):
+            st.warning(f"This specialty is only available for ages {min_age} to {max_age}.")
+    elif min_age is not None and max_age is None:
+        if age_filter < min_age:
+            st.warning(f"This specialty is only available for ages {min_age} and above.")
+    elif min_age is None and max_age is not None:
+        if age_filter > max_age:
+            st.warning(f"This specialty is only available for ages {max_age} and below.")
     
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(doctor_specialties_filtered['doctor_id'])]
 
@@ -130,7 +142,6 @@ if day_filter:
 
 # Display the table with additional details
 st.write("### Available Doctors:")
-st.dataframe(filtered_doctors[['name', 'location', 'day_of_week', 'name_specialty']])
 st.dataframe(filtered_doctors[['name', 'location', 'day_of_week', 'name_specialty']])
 
 # Data Entry Forms
@@ -170,8 +181,8 @@ with st.sidebar.form("assign_specialty"):
     st.subheader("Assign Specialty to Doctor")
     selected_doctor = st.selectbox("Select Doctor", doctors['doctor_id'].tolist())
     selected_specialty = st.selectbox("Select Specialty", specialties['specialty_id'].tolist())
-    min_age = st.number_input("Min Age", min_value=0, max_value=100, value=0)
-    max_age = st.number_input("Max Age", min_value=0, max_value=100, value=100)
+    min_age = st.number_input("Min Age", min_value=0, max_value=150, value=None)  # Allow None
+    max_age = st.number_input("Max Age", min_value=0, max_value=150, value=None)  # Allow None
     if st.form_submit_button("Assign Specialty"):
         conn = get_connection()
         cursor = conn.cursor()
