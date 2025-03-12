@@ -143,8 +143,12 @@ with st.sidebar.form("add_doctor"):
     doctor_id = st.text_input("Doctor ID")
     doctor_name = st.text_input("Doctor Name")
     if st.form_submit_button("Add Doctor"):
-        conn.execute("INSERT INTO doctors (doctor_id, name) VALUES (?, ?)", (doctor_id, doctor_name))
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO doctors (doctor_id, name) VALUES (%s, %s)", (doctor_id, doctor_name))
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Doctor added successfully")
 
 # Add Specialty
@@ -153,8 +157,12 @@ with st.sidebar.form("add_specialty"):
     specialty_id = st.text_input("Specialty ID")
     specialty_name = st.text_input("Specialty Name")
     if st.form_submit_button("Add Specialty"):
-        conn.execute("INSERT INTO specialties (specialty_id, name) VALUES (?, ?)", (specialty_id, specialty_name))
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO specialties (specialty_id, name) VALUES (%s, %s)", (specialty_id, specialty_name))
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Specialty added successfully")
 
 # Assign Doctor to Specialty with Age Restrictions
@@ -165,9 +173,13 @@ with st.sidebar.form("assign_specialty"):
     min_age = st.number_input("Min Age", min_value=0, max_value=100, value=0)
     max_age = st.number_input("Max Age", min_value=0, max_value=100, value=100)
     if st.form_submit_button("Assign Specialty"):
-        conn.execute("INSERT INTO doctor_specialties (doctor_id, specialty_id, min_age, max_age) VALUES (?, ?, ?, ?)", 
-                     (selected_doctor, selected_specialty, min_age, max_age))
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO doctor_specialties (doctor_id, specialty_id, min_age, max_age) VALUES (%s, %s, %s, %s)", 
+                       (selected_doctor, selected_specialty, min_age, max_age))
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Specialty assigned successfully")
 
 # Assign Doctor to Schedule
@@ -177,9 +189,13 @@ with st.sidebar.form("assign_schedule"):
     location = st.text_input("Location")
     day_of_week = st.selectbox("Day of the Week", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
     if st.form_submit_button("Assign Schedule"):
-        conn.execute("INSERT INTO doctor_schedule (doctor_id, location, day_of_week) VALUES (?, ?, ?)", 
-                     (selected_doctor, location, day_of_week))
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO doctor_schedule (doctor_id, location, day_of_week) VALUES (%s, %s, %s)", 
+                       (selected_doctor, location, day_of_week))
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Schedule assigned successfully")
 
 # Update Doctor Information
@@ -193,31 +209,35 @@ with st.sidebar.form("update_doctor"):
     new_min_age = st.number_input("New Min Age", min_value=0, max_value=100, value=0)
     new_max_age = st.number_input("New Max Age", min_value=0, max_value=100, value=100)
     if st.form_submit_button("Update Doctor"):
+        conn = get_connection()
+        cursor = conn.cursor()
         # Update doctor's name (if necessary)
         if new_name:
-            conn.execute('''
+            cursor.execute('''
                 UPDATE doctors
-                SET name = ?
-                WHERE doctor_id = ?
+                SET name = %s
+                WHERE doctor_id = %s
             ''', (new_name, update_doctor_id))
 
         # Update age restrictions for the specific specialty (if necessary)
         if new_min_age is not None and new_max_age is not None:
-            conn.execute('''
+            cursor.execute('''
                 UPDATE doctor_specialties
-                SET min_age = ?, max_age = ?
-                WHERE doctor_id = ? AND specialty_id = ?
+                SET min_age = %s, max_age = %s
+                WHERE doctor_id = %s AND specialty_id = %s
             ''', (new_min_age, new_max_age, update_doctor_id, selected_specialty))
 
         # Update doctor's location for the specific day (if necessary)
         if new_location:
-            conn.execute('''
+            cursor.execute('''
                 UPDATE doctor_schedule
-                SET location = ?
-                WHERE doctor_id = ? AND day_of_week = ?
+                SET location = %s
+                WHERE doctor_id = %s AND day_of_week = %s
             ''', (new_location, update_doctor_id, new_day_of_week))
 
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Doctor updated successfully")
 
 # Remove Specialty from Doctor
@@ -226,9 +246,13 @@ with st.sidebar.form("remove_specialty"):
     selected_doctor_specialty = st.selectbox("Select Doctor to Remove Specialty From", doctors['doctor_id'].tolist())
     selected_specialty_remove = st.selectbox("Select Specialty to Remove", specialties['specialty_id'].tolist(), key="remove_specialty")
     if st.form_submit_button("Remove Specialty"):
-        conn.execute("DELETE FROM doctor_specialties WHERE doctor_id = ? AND specialty_id = ?", 
-                     (selected_doctor_specialty, selected_specialty_remove))
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM doctor_specialties WHERE doctor_id = %s AND specialty_id = %s", 
+                       (selected_doctor_specialty, selected_specialty_remove))
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Specialty removed successfully")
 
 # Remove Day from Doctor's Schedule
@@ -237,11 +261,14 @@ with st.sidebar.form("remove_day"):
     selected_doctor_day = st.selectbox("Select Doctor to Remove Day From", doctors['doctor_id'].tolist(), key="remove_day_doctor")
     selected_day_remove = st.selectbox("Select Day to Remove from Schedule", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], key="remove_day_schedule")
     if st.form_submit_button("Remove Day"):
-        conn.execute("DELETE FROM doctor_schedule WHERE doctor_id = ? AND day_of_week = ?", 
-                     (selected_doctor_day, selected_day_remove))
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM doctor_schedule WHERE doctor_id = %s AND day_of_week = %s", 
+                       (selected_doctor_day, selected_day_remove))
         conn.commit()
+        cursor.close()
+        conn.close()
         st.success("Day removed successfully")
-
 
 
 conn.close()
