@@ -20,17 +20,20 @@ def get_connection():
 def create_tables():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.executescript('''
+    commands = [
+        '''
         CREATE TABLE IF NOT EXISTS doctors (
             doctor_id TEXT PRIMARY KEY,
             name TEXT NOT NULL
         );
-
+        ''',
+        '''
         CREATE TABLE IF NOT EXISTS specialties (
             specialty_id TEXT PRIMARY KEY,
             name TEXT NOT NULL
         );
-
+        ''',
+        '''
         CREATE TABLE IF NOT EXISTS doctor_specialties (
             doctor_id TEXT,
             specialty_id TEXT,
@@ -40,7 +43,8 @@ def create_tables():
             FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id),
             FOREIGN KEY (specialty_id) REFERENCES specialties(specialty_id)
         );
-
+        ''',
+        '''
         CREATE TABLE IF NOT EXISTS doctor_schedule (
             doctor_id TEXT,
             location TEXT NOT NULL,
@@ -49,11 +53,17 @@ def create_tables():
             PRIMARY KEY (doctor_id, day_of_week, location),
             FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id)
         );
-    ''')
+        '''
+    ]
+    for command in commands:
+        cursor.execute(command)
     conn.commit()
+    cursor.close()
     conn.close()
 
+# Call function create_tables to create tables
 create_tables()
+
 
 # Load data from SQL
 def load_data():
