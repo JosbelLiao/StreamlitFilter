@@ -90,7 +90,7 @@ doctor_filter = st.multiselect("Select Doctor", doctors['name'].tolist(), defaul
 specialty_filter = st.multiselect("Select Specialty", specialties['name'].tolist(), default=specialties['name'].tolist())
 location_filter = st.multiselect("Select Location", schedule['location'].unique().tolist(), default=schedule['location'].unique().tolist())
 day_filter = st.multiselect("Select Day", schedule['day_of_week'].unique().tolist(), default=schedule['day_of_week'].unique().tolist())
-age_filter = st.number_input("Enter Patient Age", min_value=0, max_value=100, value=30)
+age_filter = st.number_input("Enter Patient Age", min_value=0, max_value=150, value=30)
 
 # Filter logic
 filtered_doctors = doctors.copy()
@@ -101,20 +101,6 @@ if doctor_filter:
 if specialty_filter:
     doctor_specialties_filtered = doctor_specialties[doctor_specialties['specialty_id'].isin(
         specialties[specialties['name'].isin(specialty_filter)]['specialty_id'].values)]
-    
-    min_age = doctor_specialties_filtered['min_age'].min()
-    max_age = doctor_specialties_filtered['max_age'].max()
-    
-    if min_age is not None and max_age is not None:
-        if not (min_age <= age_filter <= max_age):
-            st.warning(f"This specialty is only available for ages {min_age} to {max_age}.")
-    elif min_age is not None and max_age is None:
-        if age_filter < min_age:
-            st.warning(f"This specialty is only available for ages {min_age} and above.")
-    elif min_age is None and max_age is not None:
-        if age_filter > max_age:
-            st.warning(f"This specialty is only available for ages {max_age} and below.")
-    
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(doctor_specialties_filtered['doctor_id'])]
 
 if location_filter:
@@ -125,8 +111,11 @@ if day_filter:
     valid_doctors = schedule[schedule['day_of_week'].isin(day_filter)]['doctor_id'].tolist()
     filtered_doctors = filtered_doctors[filtered_doctors['doctor_id'].isin(valid_doctors)]
 
-# Merge additional details for display
+# Apply age filter
 filtered_doctors = filtered_doctors.merge(doctor_specialties, on='doctor_id', how='left')
+filtered_doctors = filtered_doctors[(filtered_doctors['min_age'] <= age_filter) & (filtered_doctors['max_age'] >= age_filter)]
+
+# Merge additional details for display
 filtered_doctors = filtered_doctors.merge(schedule, on='doctor_id', how='left')
 filtered_doctors = filtered_doctors.merge(specialties, on='specialty_id', how='left', suffixes=('', '_specialty'))
 
