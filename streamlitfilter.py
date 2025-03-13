@@ -82,7 +82,11 @@ def load_data():
 
 doctors, specialties, doctor_specialties, schedule = load_data()
 
+# Load the logo
+logo_path = "C:\\Users\\josbe\\Documents\\streamlitfilter\\Logo"  # Reemplaza con la ruta completa al archivo de imagen
+
 # Streamlit UI
+st.image(logo_path, use_column_width=True)
 st.title("Doctor Filter App")
 
 # Filters
