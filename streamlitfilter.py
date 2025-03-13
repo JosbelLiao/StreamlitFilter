@@ -82,11 +82,7 @@ def load_data():
 
 doctors, specialties, doctor_specialties, schedule = load_data()
 
-# Load the logo
-logo_path = "C:\\Users\\josbe\\Documents\\streamlitfilter\\Logo\\Sano-Logo-600x229.png"  
-
 # Streamlit UI
-st.image(logo_path, use_container_width=True)
 st.title("Doctor Filter App")
 
 # Filters
